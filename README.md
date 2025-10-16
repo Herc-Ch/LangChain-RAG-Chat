@@ -1,5 +1,7 @@
 # 🧠 LangChain RAG Chat (Docs + Fallback LLM)
 
+The following is create by https://github.com/Herc-Ch/readme-generator
+
 A full-stack project that combines **Retrieval-Augmented Generation (RAG)** with fallback to a general LLM + conversation history when no relevant docs are retrieved (via similarity score threshold).
 
 Built with **LangChain**, **Flask**, **Pinecone**, **OpenAI**, and a **React + shadcn UI**.
