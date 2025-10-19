@@ -1,163 +1,169 @@
-# 🧠 LangChain RAG Chat (Docs + Fallback LLM)
+# LangChain Chat
 
-A full-stack project that combines **Retrieval-Augmented Generation (RAG)** with fallback to a general LLM + conversation history when no relevant docs are retrieved (via similarity score threshold).
+A documentation-grounded chatbot for the LangChain ecosystem. It retrieves answers from the official docs with inline source attributions, keeps track of conversation context, and gracefully falls back to a general-purpose LLM when the knowledge base doesn’t apply.
 
-Built with **LangChain**, **Flask**, **Pinecone**, **OpenAI**, and a **React + shadcn UI**.
+## Why this project
 
----
+- Answers are backed by the LangChain documentation (with links you can inspect)
+- Follow‑ups are rephrased to preserve context across turns
+- Unified Flask API powers a React + Vite chat UI
+- End‑to‑end ingestion pipeline: crawl docs → split into chunks → embed → index in Pinecone
+- Sensible defaults and a single command to run everything with Docker Compose
 
-## ✨ Features
+## Tech stack
 
-- 🔍 **RAG with similarity score threshold**
+- Backend: Python 3.11, Flask, LangChain
+- LLM + embeddings: OpenAI (GPT‑4, text-embedding-3-small)
+- Vector store: Pinecone
+- Crawler: Tavily
+- Frontend: React 19, Vite, shadcn/ui
 
-  - Queries docs first using Pinecone vector store.
-  - Falls back to general LLM (with history) when no relevant chunks are found.
-
-- 📚 **Custom ingestion pipeline**
-
-  - Crawls [LangChain Python docs](https://python.langchain.com) with Tavily.
-  - Splits, embeds (`text-embedding-3-small`), and stores in Pinecone.
-
-- 💬 **Conversational UI**
-
-  - React + shadcn frontend with chat history.
-  - Code blocks rendered in black boxes with copy button.
-  - Provenance badges (Docs vs Model-only) and citations.
-
-- 🚀 **Full stack ready for Docker**
-  - Flask backend serving `/answer` endpoint.
-  - React frontend with Vite.
-  - Env-based config for OpenAI, Pinecone, Tavily, LangSmith.
-
----
-
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
-flowchart TD
-    subgraph Ingestion
-        A[Crawl docs via Tavily] --> B[Recursive Splitter 1000/150]
-        B --> C[OpenAI Embeddings]
-        C --> D[Pinecone VectorStore]
-    end
+flowchart LR
+  subgraph FE["Frontend: React + Vite"]
+    UI["Chat UI"]
+  end
 
-    subgraph Backend_Flask
-        E[User Query + Chat History] --> F[Check VectorStore]
-        F -->|Relevant Chunks| G[LLM + RAG Chain]
-        F -->|No Chunks| H[General LLM with history]
-        G --> I[Response + Sources]
-        H --> I
-    end
+  subgraph BE["Backend: Flask"]
+    API["/answer endpoint"]
+    RAG["LangChain RAG pipeline
+(history-aware)"]
+  end
 
-    subgraph Frontend_React_shadcn
-        J[Chat UI] --> I
-        I --> J
-    end
+  subgraph VEC["Vector Store"]
+    PC["Pinecone index"]
+  end
+
+  subgraph ING["Ingestion"]
+    CRAWL["Tavily crawl (LangChain docs)"]
+    SPLIT["Recursive splitter"]
+    EMB["OpenAI embeddings (text-embedding-3-small)"]
+    UPS["Upsert vectors"]
+  end
+
+  UI -- "HTTP /answer" --> API
+  API -- "invokes" --> RAG
+  RAG -- "query" --> PC
+
+  CRAWL -- "docs" --> SPLIT
+  SPLIT -- "chunks" --> EMB
+  EMB -- "vectors" --> UPS
+  UPS -- "writes" --> PC
+
+  OAI(("OpenAI LLM"))
+  TAV(("Tavily"))
+
+  RAG -- "LLM calls" --> OAI
+  CRAWL -- "API" --> TAV
 ```
 
----
+## Getting started
 
-## ⚙️ Environment Variables
+Prerequisites:
+- Python 3.11+
+- Node.js 20+
+- Accounts/API keys: OpenAI, Pinecone, Tavily
+- A Pinecone index (1536 dimensions for text-embedding-3-small)
 
-Create a `.env` file at the project root with the following keys:
+1) Configure environment
 
-```env
-OPENAI_API_KEY=sk-...
-PINECONE_API_KEY=pcsk-...
-INDEX_NAME=langchain-doc-index
-LANGSMITH_API_KEY=lsv2_...
-LANGSMITH_TRACING=true
-TAVILY_API_KEY=tvly-...
-FLASK_SECRET_KEY=your-secret
+Create a .env file in the project root:
+```
+PINECONE_API_KEY=...
+INDEX_NAME=...
+OPENAI_API_KEY=...
+LANGSMITH_API_KEY=...         # optional
+LANGSMITH_TRACING=...         # optional
+TAVILY_API_KEY=...
+FLASK_SECRET_KEY=...          # optional
+```
+Tip: many setups default to INDEX_NAME="langchain-doc-index". Ensure your Pinecone index name matches your configuration.
+
+2) Create a Pinecone index
+- Name: your chosen name (e.g., langchain-doc-index)
+- Dimension: 1536
+- Metric: cosine
+
+3) Install backend dependencies
+```
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scriptsctivate
+pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
-### Run with Docker
+4) Ingest the documentation
+```
+python ingestion.py
+```
+Run this when setting up the project and anytime you want to refresh the knowledge base.
 
-From the project root:
+5) Start the API
+```
+python main.py
+```
+The server listens on http://localhost:5000
 
-```bash
+6) Start the frontend
+```
+cd frontend
+npm install
+npm run dev
+```
+The app is available at http://localhost:5173
+
+## Docker
+
+Use Docker Compose to run the full stack in one go:
+```
 docker-compose up --build
 ```
+- Backend: http://localhost:5000
+- Frontend: http://localhost:5173
 
-## 🛠️ Tech Stack
+Ensure the .env file (with required keys) exists in the project root before starting.
 
-### Backend
+## API reference
 
-- Flask (API server)
+POST /answer
+- Request body:
+  - query: string
+  - chat_history: array of messages, e.g. [{ "role": "human"|"ai", "content": string }]
+- Response body:
+  - answer: string
+  - chat_history: updated history including the latest exchange
+  - sources: array of URLs when documentation was used
+  - provenance: "docs" | "model_only"
+  - model_name: string
 
-- LangChain (RAG, chains, prompts)
-
-- Pinecone (vector DB)
-
-- OpenAI (embeddings + chat LLM)
-
-- Tavily (site crawler)
-
-### Frontend
-
-- React + Vite
-
-- shadcn/ui + TailwindCSS
-
-- react-markdown + prism-react-renderer
-
-## Project Structure
-
-```bash
-├── core.py # RAG + fallback logic
-├── ingestion.py # Crawl, split, embed, and store docs
-├── logger.py # Colored logging helpers
-├── main.py # Flask API entrypoint
-├── requirements.txt # Backend dependencies
-├── Dockerfile # Backend Dockerfile
-├── docker-compose.yml # Compose for backend + frontend
-├── frontend/
-│ ├── Dockerfile # Frontend Dockerfile
-│ ├── package.json
-│ ├── vite.config.js
-│ └── src/...
-└── README.md
+Example:
+```
+curl -X POST http://localhost:5000/answer   -H "Content-Type: application/json"   -d '{"query":"What is a retriever in LangChain?","chat_history":[]}'
 ```
 
-## 📂 Example Workflow
+## Configuration
 
-1. **Use Docker**
-   ```bash
-   docker-compose up --build
-   ```
-1. **Ingest docs**
+Environment variables:
+- PINECONE_API_KEY
+- INDEX_NAME
+- OPENAI_API_KEY
+- LANGSMITH_API_KEY (optional)
+- LANGSMITH_TRACING (optional)
+- TAVILY_API_KEY
+- FLASK_SECRET_KEY (optional)
 
-   Run the ingestion script once to crawl and embed LangChain documentation into Pinecone:
+Notes:
+- Make sure the Pinecone index name in your ingestion script matches INDEX_NAME.
+- The backend can stream tokens internally; the sample UI renders the final answer by default.
+- CORS is configured to allow requests from the Vite dev server at localhost:5173.
 
-   ```bash
-   python ingestion.py
-   ```
+## Troubleshooting
 
-1. **Start backend & frontend**
+- Pinecone dimension mismatch: confirm your index uses 1536 dimensions for text-embedding-3-small.
+- Empty answers or no sources: verify ingestion finished successfully and that your index is non-empty.
+- Authentication errors: double-check OpenAI, Pinecone, and Tavily API keys are present and valid.
+- Rate limits: reduce concurrency or add backoff; consult provider dashboards.
 
-   Either locally (see above) or with Docker Compose.
-
-   ```bash
-   # Local
-   python main.py         # backend
-   cd frontend && npm run dev   # frontend
-   ```
-
-1. **Query the app**
-
-- Example queries:
-
-  - “How do I build a retrieval chain in LangChain?” → docs-based answer (📖 From Docs).
-  - “Who created Attack on Titan?” → fallback to general LLM (💡 General Answer).
-
-## 💡Usage
-
-1. Open the frontend at http://localhost:5173.
-
-1. Ask a question in the chat UI.
-
-1. If relevant docs are retrieved → the answer is grounded in docs (📖 From Docs badge).
-
-1. If no relevant docs are found → the answer comes from the general LLM with history (💡 General Answer badge).
-
-1. Citations are displayed as expandable lists under each AI answer.
+Happy building! 🚀
