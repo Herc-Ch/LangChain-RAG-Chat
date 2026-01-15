@@ -5,13 +5,15 @@ from dotenv import load_dotenv
 from langchain_classic import hub
 from langchain_classic.callbacks.base import BaseCallbackHandler
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
-from langchain_classic.chains.history_aware_retriever import create_history_aware_retriever
+from langchain_classic.chains.history_aware_retriever import (
+    create_history_aware_retriever,
+)
 from langchain_classic.chains.retrieval import create_retrieval_chain
 from langchain_openai import ChatOpenAI
 
 from ingestion import vectorstore
 from logger import *
- 
+
 
 # Custom handler: prints tokens live
 class PrintTokenHandler(BaseCallbackHandler):
