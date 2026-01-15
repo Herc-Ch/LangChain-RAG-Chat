@@ -4,11 +4,42 @@ A documentation-grounded chatbot for the LangChain ecosystem. It retrieves answe
 
 ## Why this project
 
-- Answers are backed by the LangChain documentation (with links you can inspect)
-- Follow‑ups are rephrased to preserve context across turns
-- Unified Flask API powers a React + Vite chat UI
-- End‑to‑end ingestion pipeline: crawl docs → split into chunks → embed → index in Pinecone
-- Sensible defaults and a single command to run everything with Docker Compose
+This chatbot intelligently decides **when to use RAG and when not to**, instead of blindly querying the vector store on every request.
+
+### 1️⃣ General question → **RAG skipped (threshold not met)**
+
+The question is outside the LangChain documentation scope, so the system:
+- skips retrieval
+- answers using the base LLM
+- marks provenance as `model_only`
+
+![General question – RAG skipped](https://github.com/user-attachments/assets/e70d5167-8fac-436e-9341-92c3546c89b4)
+
+---
+
+### 2️⃣ Documentation-related question → **RAG activated**
+
+The query matches the LangChain documentation with sufficient confidence:
+- documents are retrieved from Pinecone
+- sources are cited inline
+- provenance is marked as `docs`
+
+![Documentation question – RAG used](https://github.com/user-attachments/assets/08ff942e-2859-49fe-81a8-4d18abda96b1)
+
+---
+
+### 3️⃣ Follow-up question → **Fallback to general LLM with memory**
+
+The user asks a meta-question:
+> *"What was my first question?"*
+
+This does not require retrieval, but **conversation memory is preserved**:
+- RAG is skipped
+- chat history is injected
+- the assistant correctly recalls prior context
+
+![Follow-up – memory without RAG](https://github.com/user-attachments/assets/8929b747-3ca3-4bf7-a0a4-1c351589a620)
+
 
 ## Tech stack
 
