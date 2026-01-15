@@ -24,7 +24,7 @@ The query matches the LangChain documentation with sufficient confidence:
 - sources are cited inline
 - provenance is marked as `docs`
 
-![Documentation question – RAG used](https://github.com/user-attachments/assets/08ff942e-2859-49fe-81a8-4d18abda96b1)
+![Follow-up – memory without RAG](https://github.com/user-attachments/assets/8929b747-3ca3-4bf7-a0a4-1c351589a620)
 
 ---
 
@@ -38,7 +38,7 @@ This does not require retrieval, but **conversation memory is preserved**:
 - chat history is injected
 - the assistant correctly recalls prior context
 
-![Follow-up – memory without RAG](https://github.com/user-attachments/assets/8929b747-3ca3-4bf7-a0a4-1c351589a620)
+![Documentation question – RAG used](https://github.com/user-attachments/assets/08ff942e-2859-49fe-81a8-4d18abda96b1)
 
 
 ## Tech stack
