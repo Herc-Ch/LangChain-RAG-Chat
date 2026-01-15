@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import MarkdownMessage from "@/components/markdown-message";
+
 export default function Chat() {
   const spinner = () => (
     <div className="flex flex-col items-center justify-center space-y-3 py-6">

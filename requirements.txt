@@ -11,7 +11,7 @@ langchain-openai
 langchain-pinecone
 langchain-tavily
 langchain-text-splitters
-
+langchain-classic
 # --- External Dependencies ---
 openai
 pinecone-client

@@ -2,11 +2,11 @@ import os
 from typing import Any, Dict, List
 
 from dotenv import load_dotenv
-from langchain import hub
-from langchain.callbacks.base import BaseCallbackHandler
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains.history_aware_retriever import create_history_aware_retriever
-from langchain.chains.retrieval import create_retrieval_chain
+from langchain_classic import hub
+from langchain_classic.callbacks.base import BaseCallbackHandler
+from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+from langchain_classic.chains.history_aware_retriever import create_history_aware_retriever
+from langchain_classic.chains.retrieval import create_retrieval_chain
 from langchain_openai import ChatOpenAI
 
 from ingestion import vectorstore
